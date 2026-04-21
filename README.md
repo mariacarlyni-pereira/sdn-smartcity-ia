@@ -23,14 +23,14 @@ Pandas & Matplotlib: Processamento de dados e geração de gráficos.
 Siga a ordem dos terminais abaixo (certifique-se de estar com o ambiente ryu_env ativo):
 
 1. Iniciar a Rede (Plano de Dados)
-Bash
 sudo python3 topologia_smartcity.py
+
 2. Iniciar o Controlador (Plano de Controle)
-Bash
 ryu-manager coletor_dados.py
+
 3. Executar o Cérebro da IA (Análise Preditiva)
-Bash
 python3 treinar_ia.py
+
 📊 Resultados e Análise
 O sistema analisa o histórico de bytes recebidos na porta do Servidor. Ao identificar uma tendência de alta (positiva), o modelo de IA projeta o volume de dados para o próximo intervalo. Se a predição ultrapassar o limite de segurança, o sistema emite um Alerta de Congestionamento Iminente.
 
