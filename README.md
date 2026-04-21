@@ -28,4 +28,28 @@ Siga a ordem dos terminais abaixo dentro do ambiente virtual `ryu_env`:
 
 ### 1. Iniciar a Rede (Plano de Dados)
 ```bash
+
 sudo python3 topologia_smartcity.py
+2. Iniciar o Controlador (Plano de Controle)
+Bash
+ryu-manager coletor_dados.py
+3. Executar o Cérebro da IA (Análise Preditiva)
+Bash
+python3 treinar_ia.py
+📊 Resultados
+O sistema gera um gráfico chamado grafico_ia.png que demonstra a curva de tráfego real versus a linha de tendência projetada pela IA. Quando uma subida agressiva é detectada, o terminal exibe um alerta de Congestionamento Iminente.
+
+Desenvolvido por: [Seu Nome ou Link do GitHub] 🚀
+
+
+---
+
+### Por que ficou melhor?
+1.  **Badges:** Aqueles selinhos no topo (Python, Ryu, Mininet) dão um ar de projeto profissional e bem acabado.
+2.  **Emojis:** Facilitam a leitura rápida e deixam o visual menos cansativo.
+3.  **Estrutura em Tópicos:** Quem olha o repositório entende o que é, o que usa e como roda em menos de 10 segundos.
+4.  **Blocos de Código:** Destaca os comandos, facilitando para outra pessoa (ou seu professor) testar o projeto.
+
+**Dica extra:** Depois de colar, não esqueça de subir o seu arquivo `grafico_ia.png` para a pasta principal do GitHub também. Assim, você pode até adicionar uma linha no README como `![Gráfico do Projeto](grafico_ia.png)` para a imagem aparecer direto na página inicial!
+
+Ficou bem mais "profissa", né? Quer que eu mude mais alguma coisa?
