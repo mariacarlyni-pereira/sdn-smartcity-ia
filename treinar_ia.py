@@ -1,85 +1,70 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
-import numpy as np
-import sys
+import matplotlib.pyplot as plt
+import os
 
-# 1. Configurações iniciais
-ARQUIVO_CSV = 'dataset_smartcity.csv'
-COLUNAS = ['timestamp', 'switch_id', 'porta', 'tx_bytes', 'rx_bytes', 'tx_pacotes', 'rx_pacotes']
-
-# 2. Carregar os dados
 try:
-    # Lemos o CSV forçando os nomes das colunas e tratando possíveis problemas de formatação
-    df = pd.read_csv(ARQUIVO_CSV, names=COLUNAS, header=None, skiprows=1)
+    # 1. Carregar os dados
+    df = pd.read_csv('dataset_smartcity.csv', names=['Tempo', 'Bytes'])
     
-    # Limpeza de espaços nos nomes (por segurança)
-    df.columns = df.columns.str.strip()
+    # --- BLINDAGEM CONTRA TEXTOS (Correção do erro 'tx_pacotes') ---
+    df['Tempo'] = pd.to_numeric(df['Tempo'], errors='coerce')
+    df['Bytes'] = pd.to_numeric(df['Bytes'], errors='coerce')
+    df = df.dropna() # Remove qualquer linha que não seja número puro
+    # ---------------------------------------------------------------
     
-    if df.empty:
-        print("Erro: O arquivo CSV está vazio. Gere tráfego no Mininet primeiro!")
-        sys.exit()
+    print(f"\n*** Dataset carregado! Analisando {len(df)} linhas válidas de dados.")
+
+    # Verifica se há dados suficientes para treinar a IA
+    if len(df) < 2:
+        print("⚠️ Dados insuficientes no CSV. Deixe o Ryu rodando por mais alguns segundos e tente novamente.")
+        exit()
+
+    # 2. Preparar os dados para a Regressão Linear
+    X = df[['Tempo']].values
+    y = df['Bytes'].values
+
+    # 3. Treinar o modelo
+    modelo = LinearRegression()
+    modelo.fit(X, y)
+
+    # 4. Fazer a Previsão (Tt + 5s)
+    ultimo_tempo = df['Tempo'].max()
+    ultima_carga = df['Bytes'].iloc[-1]
+    tempo_futuro = [[ultimo_tempo + 5]]
+    previsao = modelo.predict(tempo_futuro)[0]
+
+    print("\n--- RELATÓRIO PREDITIVO - SMART CITY ---")
+    print(f"Última carga registrada: {ultima_carga:.2f} bytes")
+    print(f"Previsão da IA para T+5s: {previsao:.2f} bytes")
+
+    # 5. Lógica de Alerta e Ação Mitigadora (A LINHA LARANJA DO DIAGRAMA)
+    # Se a previsão apontar um aumento crítico (ex: 20% maior que o atual)
+    if previsao > (ultima_carga * 1.20):
+        print("\n⚠️ ALERTA: Tendência de Congestionamento Detectada!")
+        print("🛡️  AÇÃO DA IA: Enviando regra OpenFlow para DESCARTAR tráfego do Usuário (H2)...")
         
-    print(f"*** Dataset carregado! Analisando {len(df)} linhas de dados.")
+        # Comando que bloqueia o IP do H2 (10.0.0.2) no switch S1
+        comando_openflow = "sudo ovs-ofctl add-flow s1 priority=100,ip,nw_src=10.0.0.2,actions=drop"
+        os.system(comando_openflow)
+        print("✅ Regra aplicada no Switch S1 com sucesso!")
+    else:
+        print("\n✅ Tráfego estável. Nenhuma ação necessária.")
 
+    # 6. Gerar o Gráfico
+    plt.figure(figsize=(10, 5))
+    plt.scatter(X, y, color='blue', label='Tráfego Real')
+    plt.plot(X, modelo.predict(X), color='orange', label='Tendência (IA)')
+    plt.scatter(tempo_futuro, previsao, color='red', marker='X', s=100, label='Previsão (T+5s)')
+    plt.title('Monitoramento e Predição de Congestionamento')
+    plt.xlabel('Tempo (s)')
+    plt.ylabel('Volume de Dados (Bytes)')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('grafico_ia.png')
+    print("\n*** Sucesso: O gráfico 'grafico_ia.png' foi gerado e salvo na pasta!")
+
+except FileNotFoundError:
+    print("❌ Erro: O arquivo 'dataset_smartcity.csv' não foi encontrado.")
 except Exception as e:
-    print(f"Erro ao carregar o arquivo: {e}")
-    sys.exit()
-
-# 3. Filtrar os dados do Servidor (Porta 3)
-# No Mininet, o servidor ficou na porta 3 do switch central
-df_servidor = df[df['porta'] == 3].copy()
-
-if len(df_servidor) < 2:
-    print("Erro: Dados insuficientes para a Porta 3. Rode o iperf no Mininet por mais tempo.")
-    sys.exit()
-
-# 4. Calcular o Throughput (Variação de bytes recebidos)
-# Como o Ryu salva o acumulado, o diff() nos dá o tráfego real do intervalo
-df_servidor['throughput'] = df_servidor['rx_bytes'].diff().fillna(0)
-
-# 5. Preparar a Inteligência Artificial (Regressão Linear)
-# X = Eixo do Tempo (0, 1, 2...)
-# y = Volume de dados (Throughput)
-X = np.arange(len(df_servidor)).reshape(-1, 1)
-y = df_servidor['throughput'].values
-
-# Criar e treinar o modelo com o Scikit-Learn
-modelo = LinearRegression()
-modelo.fit(X, y)
-
-# 6. Predição para T+5 segundos
-# O próximo ponto no tempo (amostra atual + 2 ciclos de 3s)
-ponto_futuro = np.array([[len(X) + 2]])
-predicao = modelo.predict(ponto_futuro)
-
-# Garantir que a predição não seja negativa (matematicamente possível, fisicamente não)
-predicao_final = max(0, predicao[0])
-
-print("-" * 45)
-print(f"RELATÓRIO PREDITIVO - SMART CITY")
-print(f"Última carga registrada: {y[-1]:.2f} bytes")
-print(f"Previsão da IA para T+5s: {predicao_final:.2f} bytes")
-
-# Lógica de Alerta
-if predicao_final > y[-1] * 1.3:
-    print("ALERTA: Tendência de Congestionamento Detectada! ⚠️")
-else:
-    print("STATUS: Rede Estável. ✅")
-print("-" * 45)
-
-# 7. Gerar Gráfico de Visualização
-plt.figure(figsize=(10, 6))
-plt.plot(X, y, color='#1f77b4', marker='o', label='Tráfego Real (Histórico)')
-plt.plot(X, modelo.predict(X), color='#ff7f0e', linestyle='--', label='Linha de Tendência IA')
-plt.scatter(ponto_futuro, predicao_final, color='red', s=150, edgecolors='black', label='Previsão T+5s', zorder=5)
-
-plt.title('Monitoramento de Rede SDN - Predição via Regressão Linear')
-plt.xlabel('Amostras de Tempo (Intervalos de 3s)')
-plt.ylabel('Bytes Recebidos (Throughput)')
-plt.legend()
-plt.grid(True, alpha=0.3)
-
-# Salvar o gráfico
-plt.savefig('grafico_ia.png')
-print("\n*** Sucesso: O gráfico 'grafico_ia.png' foi gerado!")
+    print(f"❌ Ocorreu um erro inesperado: {e}")
