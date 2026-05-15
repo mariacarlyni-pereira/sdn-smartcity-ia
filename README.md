@@ -16,7 +16,7 @@ O ambiente foi virtualizado dividindo os planos de controle e de dados:
 
 **Hosts da Topologia:**
 * **H1 (Câmera):** Gera tráfego de vídeo crítico (UDP, limitado a 5 Mbps).
-* **H2 (Usuário Agressor):** Gera tráfego massivo e concorrente (TCP).
+* **H2 (Usuário):** Gera tráfego massivo e concorrente (TCP).
 * **H3 (Servidor):** Destino de todo o tráfego (Sumidouro / iperf server).
 
 ---
