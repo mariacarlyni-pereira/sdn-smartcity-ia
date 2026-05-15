@@ -8,7 +8,7 @@
 
 ## 📋 Sobre o Projeto
 
-O avanço das Cidades Inteligentes (*Smart Cities*) gera um volume massivo de dados que convergem para a mesma infraestrutura física de rede. Neste cenário, fluxos de missão crítica, como videomonitoramento de segurança, competem diretamente por recursos com o tráfego gerado por usuários comuns ou dispositivos infectados por *malware*.
+O avanço das Cidades Inteligentes (*Smart Cities*) gera um volume massivo de dados que convergem para a mesma infraestrutura física de rede. Neste cenário, fluxos de missão crítica, como videomonitoramento de segurança, competem diretamente por recursos com o tráfego gerado por usuários ou dispositivos infectados por *malware*.
 
 Redes tradicionais operam sob um paradigma **reativo**, intervindo apenas após o transbordo das filas (*buffer overflow*) e a perda de pacotes, o que inviabiliza transmissões em tempo real.
 
