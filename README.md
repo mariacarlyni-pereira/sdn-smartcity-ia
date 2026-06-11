@@ -42,7 +42,8 @@ Com a topologia iniciada, o host `camera` (H1) transmite seu fluxo de vídeo par
 O host `usuario` (H2) inicia uma inundação de tráfego volumétrico UDP de 1 Gbps em direção ao servidor (H3). Ambos os fluxos competem pelo mesmo enlace físico, iniciando uma rampa ascendente abrupta de utilização de banda.
 
 ### Passo 3: Isolamento e Diferenciação Discreta
-Como os contadores internos do OpenFlow são estritamente acumuladores incrementais, o script de IA lê o arquivo CSV e realiza uma diferenciação discreta (`.diff()`) para isolar a taxa real de transferência instantânea por ciclo, convertendo o volume bruto para Megabytes:
+Como os contadores internos do OpenFlow são estritamente acumuladores incrementais, o script de IA lê o arquivo CSV e realiza uma diferença discreta (`.diff()`) para isolar a taxa real de transferência instantânea por ciclo, convertendo o volume bruto para Megabytes:
+
 $$\text{Throughput (MB)} = \frac{\Delta\text{Bytes}}{1024 \times 1024}$$
 
 ### Passo 4: Predição baseada em Janela Deslizante (*Sliding Window*)
@@ -53,13 +54,134 @@ Se a projeção futura calculada pela IA superar um **limiar de tolerância de 3
 
 ### Passo 6: Mitigação Ativa em Tempo Real (Fechamento do Laço)
 Diferente das abordagens puramente consultivas, o script invoca comandos automáticos de sistema e interage diretamente com o switch de borda via utilitário `ovs-ofctl`. Uma regra OpenFlow prioritária de descarte é injetada dinamicamente:
+
 ```bash
 sudo ovs-ofctl add-flow s1 "priority=50000,udp,nw_src=10.0.0.2,actions=drop"
-O tráfego agressor do IP 10.0.0.2 é cortado na entrada do switch, antes de atingir ou estourar as filas físicas de buffer do servidor alvo.📈 Resultados Experimentais e Análise ComparativaA eficiência do ecossistema inteligente foi avaliada confrontando o comportamento da infraestrutura sob dois cenários operacionais distintos:Métrica / Comportamento ObservadoCenário 1 (Rede Tradicional Reativa)Cenário 2 (Rede Preditiva Proativa)Carga Nominal Injetada1000 Mbps (1 Gbps)1000 Mbps (1 Gbps)Throughput Útil Alcançado762 Mbps (Gargalo de Hardware)Fluxo Interrompido na BordaVolume de Datagramas Perdidos🔴 83.828 pacotes🟢 0 pacotes (Pós-Mitigação)Percentual de Descarte Real4,1%0%Instabilidade da Rede (Jitter)11,383 ms (Crítico)Residual (< 0,5 ms)Pacotes Fora de Ordem3.260 datagramas0Status do Streaming de Vídeo❌ Congelamento TotalFluido e EstávelAção do Plano de GerenciamentoNenhuma (Rede Inerte/Conivente)Injeção Dinâmica de Fluxo (DROP)Nota de Desempenho: No Cenário 1, a rede entrou em colapso devido à exaustão física do buffer. No Cenário 2, a IA capturou a aceleração abrupta (rampa de subida saltando para 386,22 MB), calculou uma previsão futura de 647,54 MB para $T+5$ e executou o bloqueio. O cliente agressor foi contido, emitindo o aviso de timeout no terminal (WARNING: did not receive ack of last datagram), mantendo o vídeo da câmera perfeitamente estável.🛠️ Tecnologias UtilizadasMininet — Emulação da infraestrutura de rede virtual;Ryu SDN Framework — Desenvolvimento do plano de controle programável;Open vSwitch (OVS) — Comutador virtual compatível com o protocolo OpenFlow 1.3;Python 3 — Scripting, automação de comandos de infraestrutura e processamento analítico;Pandas & Scikit-learn — Manipulação de séries temporais e modelagem de Regressão Linear;Iperf — Geração controlada de tráfego UDP e de matrizes de estresse volumétrico.🚀 Como ExecutarPré-requisitosCertifique-se de possuir os seguintes componentes instalados em um ambiente Linux (preferencialmente Ubuntu LTS):Bashsudo apt-get install mininet openvswitch-switch iperf python3-pip
+```
+
+O tráfego agressor do IP 10.0.0.2 é cortado na entrada do switch, antes de atingir ou estourar as filas físicas de buffer do servidor alvo.
+
+---
+
+## 📈 Resultados Experimentais e Análise Comparativa
+
+A eficiência do ecossistema inteligente foi avaliada confrontando o comportamento da infraestrutura sob dois cenários operacionais distintos:
+
+<table>
+  <thead>
+    <tr>
+      <th align="left">Métrica / Comportamento Observado</th>
+      <th align="left">Cenário 1 (Rede Tradicional Reativa)</th>
+      <th align="left">Cenário 2 (Rede Preditiva Proativa)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>Carga Nominal Injetada</b></td>
+      <td>1000 Mbps (1 Gbps)</td>
+      <td>1000 Mbps (1 Gbps)</td>
+    </tr>
+    <tr>
+      <td><b>Throughput Útil Alcançado</b></td>
+      <td>762 Mbps (Gargalo de Hardware)</td>
+      <td>Fluxo Interrompido na Borda</td>
+    </tr>
+    <tr>
+      <td><b>Volume de Datagramas Perdidos</b></td>
+      <td>🔴 83.828 pacotes</td>
+      <td>🟢 0 pacotes (Pós-Mitigação)</td>
+    </tr>
+    <tr>
+      <td><b>Percentual de Descarte Real</b></td>
+      <td>4,1%</td>
+      <td>0%</td>
+    </tr>
+    <tr>
+      <td><b>Instabilidade da Rede (Jitter)</b></td>
+      <td>11,383 ms (Crítico)</td>
+      <td>Residual (&lt; 0,5 ms)</td>
+    </tr>
+    <tr>
+      <td><b>Pacotes Fora de Ordem</b></td>
+      <td>3.260 datagramas</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td><b>Status do Streaming de Vídeo</b></td>
+      <td>❌ Congelamento Total</td>
+      <td>✅ Fluido e Estável</td>
+    </tr>
+    <tr>
+      <td><b>Ação do Plano de Gerenciamento</b></td>
+      <td>Nenhuma (Rede Inerte/Conivente)</td>
+      <td>Injeção Dinâmica de Fluxo (DROP)</td>
+    </tr>
+  </tbody>
+</table>
+
+**Nota de Desempenho:** No Cenário 1, a rede entrou em colapso devido à exaustão física do buffer. No Cenário 2, a IA capturou a aceleração abrupta (rampa de subida saltando para 386,22 MB), calculou uma previsão futura de 647,54 MB para $T+5$ e executou o bloqueio. O cliente agressor foi contido, emitindo o aviso de timeout no terminal (`WARNING: did not receive ack of last datagram`), mantendo o vídeo da câmera perfeitamente estável.
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+* **Mininet** — Emulação da infraestrutura de rede virtual;
+* **Ryu SDN Framework** — Desenvolvimento do plano de controle programável;
+* **Open vSwitch (OVS)** — Comutador virtual compatível com o protocolo OpenFlow 1.3;
+* **Python 3** — Scripting, automação de comandos de infraestrutura e processamento analítico;
+* **Pandas & Scikit-learn** — Manipulação de séries temporais e modelagem de Regressão Linear;
+* **Iperf** — Geração controlada de tráfego UDP e de matrizes de estresse volumétrico.
+
+---
+
+## 🚀 Como Executar
+
+### Pré-requisitos
+Certifique-se de possuir os seguintes componentes instalados em um ambiente Linux (preferencialmente Ubuntu LTS):
+
+```bash
+sudo apt-get install mininet openvswitch-switch iperf python3-pip
 pip3 install pandas scikit-learn
-Passos para ExecuçãoClone o repositório:Bashgit clone [https://github.com/SEU_USUARIO/NOME_DO_REPOSITORIO.git](https://github.com/SEU_USUARIO/NOME_DO_REPOSITORIO.git)
-cd NOME_DO_REPOSITORIO
-Inicie o gerenciador e monitor do controlador Ryu:Bashryu-manager ryu_monitor.py
-Em outro terminal, levante a topologia customizada no Mininet:Bashsudo python3 topologia.py
-Inicie as transmissões nos hosts (via CLI do Mininet ou xterm):Configurar o receptor no Servidor (H3).Iniciar o streaming benigno na Câmera (H1).Disparar a sobrecarga volumétrica no Usuário (H2) via iperf -c 10.0.0.3 -u -b 1000M.Execute o motor analítico de IA:Bashpython3 ia_predicao.py
-🔮 Próximos Passos (Trabalhos Futuros)Tratamento de Platôs pós-saturação: Evolução do algoritmo para integrar gatilhos de limites absolutos (thresholds estáticos) combinados à inclinação da reta.Modelos Não-Lineares de Aprendizado: Substituição da Regressão Linear por redes neurais recorrentes do tipo LSTM (Long Short-Term Memory) para identificação e predição de padrões sazonais e complexos de tráfego urbano de longo período.👨‍💻 AutorMaria Carlyni Pereira de Oliveira — maria.carlyni@academico.ifpb.edu.brCurso Superior de Tecnologia em Redes de Computadores — Instituto Federal da Paraíba (IFPB).
+```
+
+### Passos para Execução
+
+1. **Clone o repositório:**
+   ```bash
+   git clone https://github.com/SEU_USUARIO/NOME_DO_REPOSITORIO.git
+   cd NOME_DO_REPOSITORIO
+   ```
+
+2. **Inicie o gerenciador e monitor do controlador Ryu:**
+   ```bash
+   ryu-manager ryu_monitor.py
+   ```
+
+3. **Em outro terminal, levante a topologia customizada no Mininet:**
+   ```bash
+   sudo python3 topologia.py
+   ```
+
+4. **Inicie as transmissões nos hosts (via CLI do Mininet ou xterm):**
+   * Configurar o receptor no Servidor (H3).
+   * Iniciar o streaming benigno na Câmera (H1).
+   * Disparar a sobrecarga volumétrica no Usuário (H2) via `iperf -c 10.0.0.3 -u -b 1000M`.
+
+5. **Execute o motor analítico de IA:**
+   ```bash
+   python3 ia_predicao.py
+   ```
+
+---
+
+## 🔮 Próximos Passos (Trabalhos Futuros)
+
+* **Tratamento de Platôs pós-saturação:** Evolução do algoritmo para integrar gatilhos de limites absolutos (thresholds estáticos) combinados à inclinação da reta.
+* **Modelos Não-Lineares de Aprendizado:** Substituição da Regressão Linear por redes neurais recorrentes do tipo LSTM (Long Short-Term Memory) para identificação e predição de padrões sazonais e complexos de tráfego urbano de longo período.
+
+---
+
+## 👨‍💻 Autora
+
+* **Maria Carlyni Pereira de Oliveira** — maria.carlyni@academico.ifpb.edu.br
+* Curso Superior de Tecnologia em Redes de Computadores — Instituto Federal da Paraíba (IFPB).
