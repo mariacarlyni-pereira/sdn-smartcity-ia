@@ -39,27 +39,18 @@ if len(df_servidor) < 2:
 df_servidor['throughput'] = df_servidor['rx_bytes'].diff().fillna(0)
 
 # 5. Preparar a Inteligência Artificial (Regressão Linear)
+# X = Eixo do Tempo (0, 1, 2...)
+# y = Volume de dados (Throughput)
 X = np.arange(len(df_servidor)).reshape(-1, 1)
 y = df_servidor['throughput'].values
 
-# --- AJUSTE CRÍTICO: JANELA DESLIZANTE ---
-# Pega apenas as últimas 5 amostras (aprox. 15 segundos) para a IA ter reflexo rápido
-TAMANHO_JANELA = 5
-if len(X) >= TAMANHO_JANELA:
-    X_treino = X[-TAMANHO_JANELA:]
-    y_treino = y[-TAMANHO_JANELA:]
-else:
-    X_treino = X
-    y_treino = y
-
-# Criar e treinar o modelo focado no comportamento recente
+# Criar e treinar o modelo com o Scikit-Learn
 modelo = LinearRegression()
-modelo.fit(X_treino, y_treino)
+modelo.fit(X, y)
 
 # 6. Predição para T+5 segundos
-# O próximo ponto no tempo (+2 intervalos à frente)
-ultimo_x = X[-1][0]
-ponto_futuro = np.array([[ultimo_x + 2]])
+# O próximo ponto no tempo (amostra atual + 2 ciclos de 3s)
+ponto_futuro = np.array([[len(X) + 2]])
 predicao = modelo.predict(ponto_futuro)
 
 # Garantir que a predição não seja negativa (matematicamente possível, fisicamente não)
@@ -70,39 +61,25 @@ print(f"RELATÓRIO PREDITIVO - SMART CITY")
 print(f"Última carga registrada: {y[-1]:.2f} bytes")
 print(f"Previsão da IA para T+5s: {predicao_final:.2f} bytes")
 
-# Lógica de Alerta (Margem de tolerância de 30%)
+# Lógica de Alerta
 if predicao_final > y[-1] * 1.3:
     print("ALERTA: Tendência de Congestionamento Detectada! ⚠️")
 else:
     print("STATUS: Rede Estável. ✅")
 print("-" * 45)
 
-# 7. Gerar Gráfico de Visualização Aprimorado
+# 7. Gerar Gráfico de Visualização
 plt.figure(figsize=(10, 6))
+plt.plot(X, y, color='#1f77b4', marker='o', label='Tráfego Real (Histórico)')
+plt.plot(X, modelo.predict(X), color='#ff7f0e', linestyle='--', label='Linha de Tendência IA')
+plt.scatter(ponto_futuro, predicao_final, color='red', s=150, edgecolors='black', label='Previsão T+5s', zorder=5)
 
-# Plota TODO o histórico de tráfego real em azul
-plt.plot(X, y, color='#1f77b4', marker='o', label='Tráfego Real (Histórico completo)')
-
-# Plota a LINHA DE TENDÊNCIA apenas a partir de onde a IA começou a "prestar atenção" até o futuro
-X_linha_tendencia = np.array([[X_treino[0][0]], [ponto_futuro[0][0]]])
-y_linha_tendencia = modelo.predict(X_linha_tendencia)
-
-plt.plot(X_linha_tendencia, y_linha_tendencia, color='#ff7f0e', linestyle='--', linewidth=2, label='Tendência IA (Baseada na janela recente)')
-
-# Plota a marca da predição futura
-plt.scatter(ponto_futuro, predicao_final, color='red', s=150, edgecolors='black', label='Previsão (Alerta)', zorder=5)
-
-# Configurações visuais do gráfico
-plt.title('Detecção Proativa de Congestionamento - SDN & IA')
-plt.xlabel('Amostras de Tempo (Ciclos de leitura do Controlador)')
-plt.ylabel('Throughput (Bytes Recebidos por Ciclo)')
-plt.legend(loc='upper left')
-plt.grid(True, alpha=0.4, linestyle='--')
-
-# Destacar a área futura com uma leve sombra (opcional para visual acadêmico)
-plt.axvspan(ultimo_x, ponto_futuro[0][0] + 1, color='red', alpha=0.05, label='Zona de Risco/Ação')
+plt.title('Monitoramento de Rede SDN - Predição via Regressão Linear')
+plt.xlabel('Amostras de Tempo (Intervalos de 3s)')
+plt.ylabel('Bytes Recebidos (Throughput)')
+plt.legend()
+plt.grid(True, alpha=0.3)
 
 # Salvar o gráfico
-plt.tight_layout()
-plt.savefig('grafico_ia.png', dpi=300) # dpi=300 aumenta a qualidade da imagem salva
-print("\n*** Sucesso: O gráfico 'grafico_ia.png' foi gerado com alta resolução!")
+plt.savefig('grafico_ia.png')
+print("\n*** Sucesso: O gráfico 'grafico_ia.png' foi gerado!")

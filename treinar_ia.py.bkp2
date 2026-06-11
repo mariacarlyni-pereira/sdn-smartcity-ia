@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 import numpy as np
 import sys
-import os  # Adicionado para executar comandos do Open vSwitch
 
 # 1. Configurações iniciais
 ARQUIVO_CSV = 'dataset_smartcity.csv'
@@ -13,7 +12,7 @@ COLUNAS = ['timestamp', 'switch_id', 'porta', 'tx_bytes', 'rx_bytes', 'tx_pacote
 try:
     df = pd.read_csv(ARQUIVO_CSV, names=COLUNAS, header=None, skiprows=1)
     df.columns = df.columns.str.strip()
-
+    
     if df.empty:
         print("Erro: O arquivo CSV está vazio. Gere tráfego no Mininet primeiro!")
         sys.exit()
@@ -62,19 +61,11 @@ print(f"RELATÓRIO PREDITIVO - SMART CITY")
 print(f"Última carga registrada: {y[-1]:.2f} MB")
 print(f"Previsão da IA para T+5s: {predicao_final:.2f} MB")
 
-# Lógica de Alerta e Mitigação Ativa
+# Lógica de Alerta
 LIMITE_MINIMO_MB = 1.0
 
 if predicao_final > y[-1] * 1.3 and predicao_final > LIMITE_MINIMO_MB:
     print("ALERTA: Tendência de Congestionamento Detectada! ⚠️")
-    print("\n[MECANISMO DE DEFESA ATIVADO] 🛑")
-    print("Bloqueando tráfego malicioso do host 'usuario' (IP: 10.0.0.2)...")
-    
-    # Injeta uma regra de fluxo prioritária no Open vSwitch para dropar pacotes UDP do atacante
-    # Nota: Caso o nome do seu switch seja diferente de s1, altere o parâmetro abaixo.
-    os.system('sudo ovs-ofctl add-flow s1 "priority=50000,udp,nw_src=10.0.0.2,actions=drop"')
-    
-    print("Regra de DROP aplicada com sucesso no switch de borda!")
 else:
     print("STATUS: Rede Estável. ✅")
 print("-" * 45)
@@ -100,7 +91,10 @@ plt.xlabel('Amostras de Tempo (Ciclos Recentes)')
 plt.ylabel('Throughput (MB Transmitidos para o Servidor)')
 
 # --- AJUSTES ESTÉTICOS CRÍTICOS ---
+# Força o eixo Y a começar OBRIGATORIAMENTE em 0 e se ajustar ao topo dinamicamente
 plt.ylim(bottom=0, top=max(y_treino.max(), predicao_final) + 1)
+
+# Ajusta as bordas laterais do eixo X para não cortar as bolinhas das pontas
 plt.xlim(X_treino[0][0] - 0.3, ponto_futuro[0][0] + 0.3)
 
 plt.legend(loc='upper left')
