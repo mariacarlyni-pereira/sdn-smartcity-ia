@@ -1,0 +1,31 @@
+===================================================================
+        RELATÃ“RIO AUTOMÃTICO DE AUDITORIA DE REDE - SMART CITY
+===================================================================
+Data/Hora do Teste: 2026-06-25 01:58:52
+Topologia Aplicada: Mininet OVS (1 Switch Central S1 | 3 Hosts)
+Algoritmo de IA: RegressÃ£o Linear Aplicada com Janela Deslizante (N=5)
+-------------------------------------------------------------------
+
+1. RESUMO GERAL DA EXECUÃ‡ÃƒO DO EXPERIMENTO
+   - Tempo Total Monitorado: 69 segundos
+   - Pico MÃ¡ximo de Carga Registrado: 9567.06 MB
+   - VazÃ£o da Rede no Encerramento: 0.13 MB
+   - Status de SeguranÃ§a Final: ATAQUE BLOQUEADO / TRÃFEGO NORMALIZADO
+
+2. ANÃLISE DO EVENTO E MITIGAÃ‡ÃƒO PROATIVA
+   - Alerta CrÃ­tico Disparado: SIM
+   - Momento Exato do Bloqueio: 42 segundos (T)
+   - Comando de Defesa Injetado: sudo ovs-ofctl add-flow s1 "priority=50000,tcp,nw_src=10.0.0.2,actions=drop"
+   - Host Penalizado na Borda: Host 'usuario' (IP 10.0.0.2)
+
+3. PARECER TÃ‰CNICO ACADÃŠMICO
+   A arquitetura em malha fechada extraiu as estatÃ­sticas fÃ­sicas do switch
+   a cada 3 segundos via OpenFlow utilizando o controlador Ryu. 
+   Ao detectar a inclinaÃ§Ã£o abrupta na rampa de aceleraÃ§Ã£o do trÃ¡fego TCP,
+   a InteligÃªncia Artificial calculou a projeÃ§Ã£o para T+5 segundos.
+   O estouro de buffer foi previsto antes do colapso do hardware, acionando
+   a regra de DROP na origem e mantendo o streaming UDP da cÃ¢mera fluido.
+
+===================================================================
+                       FIM DO RELATÃ“RIO
+===================================================================
