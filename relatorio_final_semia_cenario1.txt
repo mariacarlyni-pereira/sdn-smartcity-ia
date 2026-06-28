@@ -1,0 +1,30 @@
+===================================================================
+        RELATÓRIO AUTOMÁTICO DE AUDITORIA DE REDE - CENÁRIO 1 (PASSIVO)
+===================================================================
+Data/Hora do Teste: 2026-06-28 21:29:37
+Topologia Aplicada: Mininet OVS (1 Switch Central S1 | 3 Hosts)
+Algoritmo de IA: Regressão Linear Aplicada (Monitoramento Passivo)
+-------------------------------------------------------------------
+
+1. RESUMO GERAL DA EXECUÇÃO DO EXPERIMENTO
+   - Tempo Total Monitorado: 45 segundos
+   - Pico Máximo de Carga Registrado: 11401.30 MB
+   - Vazão da Rede no Encerramento: 10740.73 MB
+   - Status de Segurança Final: REDE EM COLAPSO / ATAQUE NÃO BLOQUEADO
+
+2. ANÁLISE DO EVENTO
+   - Alerta Crítico Disparado: NAO
+   - Momento Exato da Detecção Preditiva: NENHUM
+   - Comando de Defesa Injetado: NENHUM (Modo Passivo)
+   - Host Penalizado na Borda: NENHUM
+
+3. PARECER TÉCNICO ACADÊMICO
+   A arquitetura operou de forma estritamente reativa em relação ao bloqueio.
+   A Inteligência Artificial calculou a projeção e detectou com sucesso
+   o estouro de buffer iminente. Contudo, devido à ausência do mecanismo
+   de defesa automatizado, o tráfego TCP continuou asfixiando a banda,
+   causando o colapso e o descarte dos datagramas do serviço legítimo.
+
+===================================================================
+                       FIM DO RELATÓRIO
+===================================================================
